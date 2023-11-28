@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 // var jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const app = express()
 const port = process.env.PORT || 5000;
@@ -30,6 +30,7 @@ async function run() {
 
     const database = client.db("petCareDB");
     const petCollection = database.collection("pets")
+    const adoptionRequests = database.collection("adoptionRequests")
 
     // get pets waiting for adopt
     app.get('/pets', async (req, res) => {
@@ -48,6 +49,16 @@ async function run() {
         res.send(result)
     })
 
+
+    // get single pet data
+    app.get('/pet', async (req, res) => {
+      const petId = req.query.id;
+      const query = {_id: new ObjectId(petId)}
+      const result = await petCollection.findOne(query)
+      res.send(result)
+    })
+
+    
 
 
     // Send a ping to confirm a successful connection
