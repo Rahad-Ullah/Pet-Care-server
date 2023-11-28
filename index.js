@@ -35,8 +35,7 @@ async function run() {
     // get pets waiting for adopt
     app.get('/pets', async (req, res) => {
         const category  = req.query.category;
-        const searchValue = req.query.search; 
-        console.log(category, searchValue)  
+        const searchValue = req.query.search;   
         const query = {
             category: category,
             adopted: false,
@@ -58,7 +57,43 @@ async function run() {
       res.send(result)
     })
 
-    
+    //! create adoption request
+    app.post('/adoption', async (req, res) => {
+      const request = req.body;
+      const data = {
+        name: request.name,
+        category: request.category,
+        image: request.image,
+        adopterName: request.adopterName,
+        adopterEmail: request.adopterEmail,
+        phone: request.phone,
+        address: request.address,
+        requestDate: request.requestDate, 
+      }
+
+      // check if already requested
+      const query = {name: request.name, adopterEmail: request.adopterEmail}
+      const isRequested = await adoptionRequests.findOne(query)
+      if(isRequested){
+        res.send({message: 'failed'})
+        return;
+      }else{
+        const result = await adoptionRequests.insertOne(data)
+        // update adopted if insertion success
+        const filter = {name: request.name, category: request.category}
+        const updateDoc = {
+          $set: {adopted: true}
+        }
+        if(result.insertedId){
+          const updateResult = await petCollection.updateOne(filter, updateDoc)
+          if(updateResult.modifiedCount){
+            res.send({message: 'success'})
+          }
+        }
+
+      }
+
+    })
 
 
     // Send a ping to confirm a successful connection
