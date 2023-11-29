@@ -113,11 +113,25 @@ async function run() {
       res.send(result)
     })
 
-    // get donation campaigns
+    // get donation campaigns on specific user
     app.get('/campaigns', async (req, res) => {
       const user = req.query.email;
       const query = {userEmail: user}
       const result = await campaignCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    // update donation status
+    app.patch('/campaigns', async (req, res) => {
+      const updatedStatus = req.body.status;
+      const id = req.query.id;
+      const filter = {_id: new ObjectId(id)}
+      const doc = {
+        $set:{
+          status: updatedStatus,
+        }
+      }
+      const result = await campaignCollection.updateOne(filter, doc)
       res.send(result)
     })
 
