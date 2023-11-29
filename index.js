@@ -50,6 +50,7 @@ async function run() {
     const database = client.db("petCareDB");
     const petCollection = database.collection("pets")
     const adoptionRequests = database.collection("adoptionRequests")
+    const campaignCollection = database.collection("campaigns")
     const userCollection = database.collection("users")
 
     // generate jwt token
@@ -58,6 +59,12 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
       console.log(token)
       res.send({token})
+    })
+
+    // get users
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray()
+      res.send(result)
     })
 
     // create user 
@@ -92,10 +99,17 @@ async function run() {
 
 
     // get single pet data
-    app.get('/pet', verifyToken, async (req, res) => {
+    app.get('/pet', async (req, res) => {
       const petId = req.query.id;
       const query = {_id: new ObjectId(petId)}
       const result = await petCollection.findOne(query)
+      res.send(result)
+    })
+
+    // create donation campaign
+    app.post('/campaigns', async (req, res) => {
+      const campaignData = req.body;
+      const result = await campaignCollection.insertOne(campaignData)
       res.send(result)
     })
 
