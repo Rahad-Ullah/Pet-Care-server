@@ -106,6 +106,12 @@ async function run() {
       res.send(result)
     })
 
+    // get all donation campaigns
+    app.get('/all-campaigns', async (req, res) => {
+      const result = await campaignCollection.find().toArray()
+      res.send(result)
+    })
+
     // create donation campaign
     app.post('/campaigns', async (req, res) => {
       const campaignData = req.body;
@@ -113,7 +119,7 @@ async function run() {
       res.send(result)
     })
 
-    // get donation campaigns on specific user
+    // get all donation campaigns on specific user
     app.get('/campaigns', async (req, res) => {
       const user = req.query.email;
       const query = {userEmail: user}
@@ -149,7 +155,7 @@ async function run() {
       res.send(result)
     })
 
-    // update donation status
+    // update campaign status
     app.patch('/campaign-status', async (req, res) => {
       const updatedStatus = req.body.status;
       const id = req.query.id;
