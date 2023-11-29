@@ -23,6 +23,25 @@ const client = new MongoClient(uri, {
   }
 });
 
+// custom middlewares
+// verify token middle ware
+const verifyToken = (req, res, next) =>{
+  // send error if token doesn't exist
+  if(!req.headers.authorization){
+    return res.status(401).send({message: 'fobidden access'})
+  }
+  // verify token if exist
+  const token = req.headers.authorization.split(' ')[1]
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+    if(err){
+      return res.status(401).send({message: 'fobidden access'})
+    }
+    req.decoded = decoded;
+    next()
+  })
+}
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -58,7 +77,7 @@ async function run() {
 
 
     // get single pet data
-    app.get('/pet', async (req, res) => {
+    app.get('/pet', verifyToken, async (req, res) => {
       const petId = req.query.id;
       const query = {_id: new ObjectId(petId)}
       const result = await petCollection.findOne(query)
