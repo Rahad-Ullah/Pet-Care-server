@@ -50,6 +50,7 @@ async function run() {
     const database = client.db("petCareDB");
     const petCollection = database.collection("pets")
     const adoptionRequests = database.collection("adoptionRequests")
+    const userCollection = database.collection("users")
 
     // generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -57,6 +58,13 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
       console.log(token)
       res.send({token})
+    })
+
+    // create user 
+    app.post('/users', async (req, res) =>{
+      const user = req.body;
+      const result = await userCollection.insertOne(user)
+      res.send(result)
     })
 
     // get pets waiting for adopt
