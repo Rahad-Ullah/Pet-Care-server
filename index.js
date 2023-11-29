@@ -67,7 +67,7 @@ async function run() {
       res.send(result)
     })
 
-    // get pets waiting for adopt
+    // get all pets waiting for adopt with filtering
     app.get('/pets', async (req, res) => {
         const category  = req.query.category;
         const searchValue = req.query.search;   
@@ -81,6 +81,13 @@ async function run() {
         }
         const result = await petCollection.find(query, options).toArray()
         res.send(result)
+    })
+
+    // add pet to pet list
+    app.post('/pets', async (req, res) => {
+      const petData = req.body;
+      const result = await petCollection.insertOne(petData);
+      res.send(result)
     })
 
 
