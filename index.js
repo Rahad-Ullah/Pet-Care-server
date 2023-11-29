@@ -113,6 +113,14 @@ async function run() {
       res.send(result)
     })
 
+    // get donation campaigns
+    app.get('/campaigns', async (req, res) => {
+      const user = req.query.email;
+      const query = {userEmail: user}
+      const result = await campaignCollection.find(query).toArray()
+      res.send(result)
+    })
+
     //! create adoption request
     app.post('/adoption', async (req, res) => {
       const request = req.body;
