@@ -121,8 +121,36 @@ async function run() {
       res.send(result)
     })
 
-    // update donation status
+    // update campaign info
     app.patch('/campaigns', async (req, res) => {
+      const id = req.query.id;
+      const filter = {_id: new ObjectId(id)}
+      const campaign = req.body;
+      const {name, maxAmount, lastDate, image, short_description, long_description} = campaign;
+      const doc = {
+        $set:{
+          name,
+          image,
+          maxAmount,
+          lastDate,
+          short_description,
+          long_description
+        }
+      }
+      const result = await campaignCollection.updateOne(filter, doc)
+      res.send(result)
+    })
+
+    // get single donation campaigns on specific user
+    app.get('/single-campaign', async (req, res) => {
+      const id = req.query.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await campaignCollection.findOne(query)
+      res.send(result)
+    })
+
+    // update donation status
+    app.patch('/campaign-status', async (req, res) => {
       const updatedStatus = req.body.status;
       const id = req.query.id;
       const filter = {_id: new ObjectId(id)}
