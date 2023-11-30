@@ -3,6 +3,7 @@ const cors = require('cors');
 var jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const app = express()
 const port = process.env.PORT || 5000;
 
@@ -51,6 +52,7 @@ async function run() {
     const petCollection = database.collection("pets")
     const adoptionRequests = database.collection("adoptionRequests")
     const campaignCollection = database.collection("campaigns")
+    const donationCollection = database.collection("donations")
     const userCollection = database.collection("users")
 
     // generate jwt token
@@ -169,8 +171,18 @@ async function run() {
       res.send(result)
     })
 
-    //! create adoption request
-    app.post('/adoption', async (req, res) => {
+
+    // get all adoption requests of specific user
+    app.get('/adoptions/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = {masterEmail: email}
+      const result = await adoptionRequests.find(query).toArray()
+      res.send(result)
+    })
+    
+
+    // create adoption request
+    app.post('/adoptions', async (req, res) => {
       const request = req.body;
       const data = {
         name: request.name,
@@ -180,7 +192,10 @@ async function run() {
         adopterEmail: request.adopterEmail,
         phone: request.phone,
         address: request.address,
+        masterName: request.masterName,
+        masterEmail: request.masterEmail,
         requestDate: request.requestDate, 
+        status: 'pending'
       }
 
       // check if already requested
@@ -191,20 +206,73 @@ async function run() {
         return;
       }else{
         const result = await adoptionRequests.insertOne(data)
-        // update adopted if insertion success
-        const filter = {name: request.name, category: request.category}
-        const updateDoc = {
-          $set: {adopted: true}
-        }
-        if(result.insertedId){
-          const updateResult = await petCollection.updateOne(filter, updateDoc)
-          if(updateResult.modifiedCount){
+          if(result.insertedId){
             res.send({message: 'success'})
           }
         }
+    })
 
+
+    // accept adoption request
+    app.patch('/adoptions', async (req, res) => {
+      const id = req.query.id;
+      const petName = req.query.name;
+      const masterEmail = req.query.masterEmail;
+      const filter = {name: petName, userEmail: masterEmail}
+      // update isAdopted
+      const updateDoc = {
+        $set: {adopted: true}
       }
+      const updateResult = await petCollection.updateOne(filter, updateDoc)
+      // update status
+      const query = {_id: new ObjectId(id)}
+      const updateStatusDoc = {
+        $set: {status: 'accepted'}
+      }
+      const statusUpdateResult = await adoptionRequests.updateOne(query, updateStatusDoc)
+      res.send({updateResult, statusUpdateResult})
+    })
 
+
+
+     // payment intent api
+     app.post('/create-payment-intent', async (req, res) => {
+      const {price} = req.body;
+      const amount = parseInt(price * 100)
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      })
+    })
+
+
+     // get all donations of specific user
+     app.get('/donations/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = {donarEmail: email}
+      const result = await donationCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    // save donation on database
+    app.post('/donations', async (req, res) => {
+      const donation = req.body;
+      const result = await donationCollection.insertOne(donation)
+      res.send({result})
+    })
+
+    // delete single donation of specific user
+    app.delete('/donations/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await donationCollection.deleteOne(query)
+      res.send(result)
     })
 
 
